@@ -1,185 +1,203 @@
 import React from 'react';
-import {
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Typography,
-  IconButton,
-} from '@mui/material';
-import DeleteIcon from '@mui/icons-material/Delete';
-import EditIcon from '@mui/icons-material/Edit';
-import { TimeTableProps } from '../types';
+import { EmployeeTime } from '../types';
 
-interface ExtendedTimeTableProps extends TimeTableProps {
-  onDelete?: (pkId: number) => Promise<void>;
-  onUpdate?: (pkId: number, updatedEntry: any) => Promise<void>;
+interface TimeTableProps {
+  entries: EmployeeTime[];
+  onDelete: (pkId: number) => Promise<void>;
+  onUpdate: (pkId: number, updatedData: Partial<EmployeeTime>) => Promise<void>;
 }
 
-const TimeTable: React.FC<ExtendedTimeTableProps> = ({ entries, onDelete, onUpdate }) => {
-  const [editingId, setEditingId] = React.useState<number | null>(null);
-  interface EditFormData {
-    REG: number;
-    OT: number;
-    VACATION: number;
-    PTO: number;
-    Holiday: number;
-    Sick: number;
-    Commission: number;
-    Deduct: number;
-  }
+const TimeTable: React.FC<TimeTableProps> = ({ entries, onDelete, onUpdate }) => {
+  const formatHours = (hours: number) => {
+    return hours.toFixed(2);
+  };
 
-  const [editForm, setEditForm] = React.useState<EditFormData | null>(null);
-  const calculateTotal = (entry: any) => {
-    return (
-      entry.REG +
-      entry.OT +
-      entry.VACATION +
-      entry.PTO +
-      entry.Holiday +
-      entry.Sick
-    );
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString();
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return 'text-yellow-600';
+      case 'approved':
+        return 'text-green-600';
+      case 'processed':
+        return 'text-blue-600';
+      default:
+        return 'text-gray-600';
+    }
   };
 
   return (
-    <Paper elevation={3} sx={{ mt: 3 }}>
-      <TableContainer>
-        <Typography variant="h6" sx={{ p: 2 }}>
-          Time Entries
-        </Typography>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Name</TableCell>
-              <TableCell>Employee ID</TableCell>
-              <TableCell>Pay Period</TableCell>
-              <TableCell>REG</TableCell>
-              <TableCell>OT</TableCell>
-              <TableCell>VAC</TableCell>
-              <TableCell>PTO</TableCell>
-              <TableCell>Holiday</TableCell>
-              <TableCell>Sick</TableCell>
-              <TableCell>Total</TableCell>
-              <TableCell>Commission</TableCell>
-              <TableCell>Deduction</TableCell>
-              <TableCell>Actions</TableCell>
-              {editingId && <TableCell>Edit Form</TableCell>}
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {entries.map((entry) => (
-              <TableRow key={entry.PK_ID}>
-                <TableCell>{`${entry.First_Name} ${entry.Last_Name}`}</TableCell>
-                <TableCell>{entry.ID_Record_Employee}</TableCell>
-                <TableCell>{entry.Pay_Period}</TableCell>
-                <TableCell>{entry.REG}</TableCell>
-                <TableCell>{entry.OT}</TableCell>
-                <TableCell>{entry.VACATION}</TableCell>
-                <TableCell>{entry.PTO}</TableCell>
-                <TableCell>{entry.Holiday}</TableCell>
-                <TableCell>{entry.Sick}</TableCell>
-                <TableCell>{calculateTotal(entry)}</TableCell>
-                <TableCell>${entry.Commission.toFixed(2)}</TableCell>
-                <TableCell>${entry.Deduct.toFixed(2)}</TableCell>
-                <TableCell sx={{ minWidth: '100px' }}>
-                  {entry.PK_ID && (
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      {onUpdate && (
-                        <IconButton
-                          onClick={() => {
-                            console.log('Edit clicked for ID:', entry.PK_ID);
-                            setEditingId(entry.PK_ID!);
-                            setEditForm({
-                              REG: entry.REG,
-                              OT: entry.OT,
-                              VACATION: entry.VACATION,
-                              PTO: entry.PTO,
-                              Holiday: entry.Holiday,
-                              Sick: entry.Sick,
-                              Commission: entry.Commission,
-                              Deduct: entry.Deduct
-                            });
-                          }}
-                          sx={{ 
-                            backgroundColor: '#e3f2fd',
-                            '&:hover': { backgroundColor: '#bbdefb' }
-                          }}
-                          color="primary"
-                          size="small"
-                          title="Edit entry"
-                        >
-                          <EditIcon fontSize="small" />
-                        </IconButton>
+    <div className="mt-8 flex flex-col">
+      <div className="-my-2 -mx-4 overflow-x-auto sm:-mx-6 lg:-mx-8">
+        <div className="inline-block min-w-full py-2 align-middle md:px-6 lg:px-8">
+          <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
+            <table className="min-w-full divide-y divide-gray-300">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th
+                    scope="col"
+                    className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6"
+                  >
+                    Date
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
+                  >
+                    Employee ID
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
+                  >
+                    Regular Hours
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
+                  >
+                    OT Hours
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
+                  >
+                    Vacation Hours
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
+                  >
+                    Holiday Hours
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
+                  >
+                    PTO Hours
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
+                  >
+                    Sick Hours
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
+                  >
+                    Total Hours
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
+                  >
+                    Deductions
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
+                  >
+                    Commission
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
+                  >
+                    Status
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
+                  >
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 bg-white">
+                {entries.map((entry) => (
+                  <tr key={entry.PK_ID}>
+                    <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
+                      {formatDate(entry.Today_Date)}
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                      {entry.ID_Record_Employee}
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                      {formatHours(entry.REG)}
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                      {formatHours(entry.OT)}
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                      {formatHours(entry.VACATION)}
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                      {formatHours(entry.Holiday)}
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                      {formatHours(entry.PTO)}
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                      {formatHours(entry.Sick)}
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                      {formatHours(
+                        entry.REG +
+                          entry.OT +
+                          entry.VACATION +
+                          entry.Holiday +
+                          entry.PTO +
+                          entry.Sick
                       )}
-                      {onDelete && (
-                        <IconButton
-                          onClick={() => onDelete(entry.PK_ID!)}
-                          sx={{ 
-                            backgroundColor: '#ffebee',
-                            '&:hover': { backgroundColor: '#ffcdd2' }
-                          }}
-                          color="error"
-                          size="small"
-                          title="Delete entry"
-                        >
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
-                      )}
-                    </div>
-                  )}
-                </TableCell>
-                {editingId === entry.PK_ID && (
-                  <TableCell>
-                    <div style={{ display: 'flex', gap: '8px', flexDirection: 'column' }}>
-                      {editForm && Object.entries(editForm).map(([key, value]) => (
-                        <div key={key}>
-                          <label>{key}: </label>
-                          <input
-                            type="number"
-                            value={value}
-                            onChange={(e) => {
-                              const updatedForm: EditFormData = {
-                                ...editForm,
-                                [key]: parseFloat(e.target.value) || 0
-                              };
-                              setEditForm(updatedForm);
-                            }}
-                          />
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                      ${entry.Deduct.toFixed(2)}
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                      ${entry.Commission.toFixed(2)}
+                    </td>
+                    <td className={`whitespace-nowrap px-3 py-4 text-sm ${getStatusColor(entry.status)}`}>
+                      {entry.status}
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                      {entry.status === 'pending' && (
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => onDelete(entry.PK_ID!)}
+                            className="text-red-600 hover:text-red-900"
+                          >
+                            Delete
+                          </button>
+                          <button
+                            onClick={() => onUpdate(entry.PK_ID!, { status: 'approved' })}
+                            className="text-blue-600 hover:text-blue-900"
+                          >
+                            Approve
+                          </button>
                         </div>
-                      ))}
-                      <div>
+                      )}
+                      {entry.status === 'approved' && (
                         <button
-                          onClick={async () => {
-                            if (onUpdate) {
-                              await onUpdate(entry.PK_ID!, editForm);
-                              setEditingId(null);
-                              setEditForm(null);
-                            }
-                          }}
+                          onClick={() => onUpdate(entry.PK_ID!, { status: 'processed' })}
+                          className="text-blue-600 hover:text-blue-900"
                         >
-                          Save
+                          Process
                         </button>
-                        <button
-                          onClick={() => {
-                            setEditingId(null);
-                            setEditForm(null);
-                          }}
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  </TableCell>
-                )}
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-    </Paper>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 

@@ -27,7 +27,22 @@ function App() {
   const fetchEntries = async () => {
     try {
       const response = await PayrollAPI.getTimeEntries();
-      setEntries(response.Result);
+      // Fetch employee data for each entry
+      const entriesWithEmployees = await Promise.all(
+        response.Result.map(async (entry) => {
+          try {
+            const employeeResponse = await PayrollAPI.getEmployeeById(entry.ID_Record_Employee);
+            return {
+              ...entry,
+              employee: employeeResponse.Result[0]
+            };
+          } catch (error) {
+            console.error(`Error fetching employee data for ID ${entry.ID_Record_Employee}:`, error);
+            return entry;
+          }
+        })
+      );
+      setEntries(entriesWithEmployees);
     } catch (error) {
       console.error('Error fetching entries:', error);
     }
@@ -36,7 +51,8 @@ function App() {
   const handleSubmit = async (data: EmployeeTime) => {
     try {
       await PayrollAPI.createTimeEntry(data);
-      fetchEntries(); // Refresh the list after creating
+      // After creating entry, fetch all entries with employee data
+      fetchEntries();
     } catch (error) {
       console.error('Error creating entry:', error);
     }
